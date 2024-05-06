@@ -229,12 +229,12 @@ namespace SyncingTenantUsers.Services
                                                             // Get contact licenses from Dataverse
                                                             string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
 
-                                                            // Set authorization header , using same token 
+                                                            // Set authorization header
                                                             string contactLicenseAccessToken = await dataverseAuth.GetAccessToken();
                                                             using HttpClient httpContactLicenseClient = new HttpClient();
-                                                            httpAccountLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", contactLicenseAccessToken);
+                                                            httpContactLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", contactLicenseAccessToken);
 
-                                                            HttpResponseMessage contactLicenseResponse = await httpAccountLicenseClient.GetAsync(contactLicenseUrl);
+                                                            HttpResponseMessage contactLicenseResponse = await httpContactLicenseClient.GetAsync(contactLicenseUrl);
 
                                                             // Check if the request was successful
                                                             if (contactLicenseResponse.IsSuccessStatusCode || ((int)contactLicenseResponse.StatusCode >= 200 && (int)contactLicenseResponse.StatusCode <= 209))
@@ -257,7 +257,7 @@ namespace SyncingTenantUsers.Services
                                                                     if (contactLicenses.Find(u => u.psa_productstringid == userlisence.psa_productstringid) == null)
                                                                     {
                                                                         // Perform an insert operation
-                                                                        contactLicenseResponse = await httpAccountLicenseClient.PostAsync($"{apiUrl}psa_contactLicenseses", createContactLicenseContent);
+                                                                        contactLicenseResponse = await httpContactLicenseClient.PostAsync($"{apiUrl}psa_contactLicenseses", createContactLicenseContent);
                                                                     }
                                                                     else
                                                                     {
@@ -265,7 +265,7 @@ namespace SyncingTenantUsers.Services
                                                                         ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u.psa_productstringid == userlisence.psa_productstringid);
 
                                                                         // Perform an update operation
-                                                                        contactLicenseResponse = await httpAccountLicenseClient.PatchAsync($"{apiUrl}psa_contactLicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
+                                                                        contactLicenseResponse = await httpContactLicenseClient.PatchAsync($"{apiUrl}psa_contactLicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
                                                                     }
 
                                                                     // Read the response body
@@ -327,9 +327,13 @@ namespace SyncingTenantUsers.Services
                                                             }
                                                             Console.WriteLine(userLicenses.Count);
                                                             string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
+                                                                                                                                                                        // Set authorization header , using same token 
+                                                            string contactLicenseAccessToken = await dataverseAuth.GetAccessToken();
+                                                            using HttpClient httpContactLicenseClient = new HttpClient();
+                                                            httpContactLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", contactLicenseAccessToken);
 
                                                             // Set authorization header
-                                                            httpAccountLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accountLicenseAccessToken);
+                                                            
 
                                                             // Get account licenses from Dataverse
                                                             HttpResponseMessage contactLicenseResponse = await httpAccountLicenseClient.GetAsync(contactLicenseUrl);
@@ -487,12 +491,12 @@ namespace SyncingTenantUsers.Services
                                                             // Get contact licenses from Dataverse
                                                             string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
 
-                                                            // Set authorization header , using same token 
+                                                            // Set authorization header 
                                                             string contactLicenseAccessToken = await dataverseAuth.GetAccessToken();
                                                             using HttpClient httpContactLicenseClient = new HttpClient();
-                                                            httpAccountLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", contactLicenseAccessToken);
+                                                            httpContactLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", contactLicenseAccessToken);
 
-                                                            HttpResponseMessage contactLicenseResponse = await httpAccountLicenseClient.GetAsync(contactLicenseUrl);
+                                                            HttpResponseMessage contactLicenseResponse = await httpContactLicenseClient.GetAsync(contactLicenseUrl);
 
                                                             // Check if the request was successful
                                                             if (contactLicenseResponse.IsSuccessStatusCode || ((int)contactLicenseResponse.StatusCode >= 200 && (int)contactLicenseResponse.StatusCode <= 209))
@@ -515,7 +519,7 @@ namespace SyncingTenantUsers.Services
                                                                     if (contactLicenses.Find(u => u.psa_productstringid == userLicense.psa_productstringid) == null)
                                                                     {
                                                                         // Perform an insert operation
-                                                                        contactLicenseResponse = await httpAccountLicenseClient.PostAsync($"{apiUrl}psa_contactLicenseses", createContactLicenseContent);
+                                                                        contactLicenseResponse = await httpContactLicenseClient.PostAsync($"{apiUrl}psa_contactLicenseses", createContactLicenseContent);
                                                                     }
                                                                     else
                                                                     {
@@ -523,7 +527,7 @@ namespace SyncingTenantUsers.Services
                                                                         ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u.psa_productstringid == userLicense.psa_productstringid);
 
                                                                         // Perform an update operation
-                                                                        contactLicenseResponse = await httpAccountLicenseClient.PatchAsync($"{apiUrl}psa_contactLicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
+                                                                        contactLicenseResponse = await httpContactLicenseClient.PatchAsync($"{apiUrl}psa_contactLicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
                                                                     }
 
                                                                     // Read the response body
@@ -587,10 +591,12 @@ namespace SyncingTenantUsers.Services
                                                             string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
 
                                                             // Set authorization header
-                                                            httpAccountLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accountLicenseAccessToken);
+                                                            using HttpClient httpContactLicenseClient = new HttpClient();
+                                                            string contactLicenseAccessToken = await dataverseAuth.GetAccessToken();
+                                                            httpContactLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", contactLicenseAccessToken);
 
                                                             // Get account licenses from Dataverse
-                                                            HttpResponseMessage contactLicenseResponse = await httpAccountLicenseClient.GetAsync(contactLicenseUrl);
+                                                            HttpResponseMessage contactLicenseResponse = await httpContactLicenseClient.GetAsync(contactLicenseUrl);
 
                                                             // Check if the request was successful
                                                             if (contactLicenseResponse.IsSuccessStatusCode || ((int)contactLicenseResponse.StatusCode >= 200 && (int)contactLicenseResponse.StatusCode <= 209))
@@ -613,7 +619,7 @@ namespace SyncingTenantUsers.Services
                                                                     if (contactLicenses.Find(u => u.psa_productstringid == userLicense.psa_productstringid) == null)
                                                                     {
                                                                         // Perform an insert operation
-                                                                        contactLicenseResponse = await httpAccountLicenseClient.PostAsync($"{apiUrl}psa_contactLicenseses", createContactLicenseContent);
+                                                                        contactLicenseResponse = await httpContactLicenseClient.PostAsync($"{apiUrl}psa_contactLicenseses", createContactLicenseContent);
                                                                     }
                                                                     else
                                                                     {
@@ -621,12 +627,12 @@ namespace SyncingTenantUsers.Services
                                                                         ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u.psa_productstringid == userLicense.psa_productstringid);
 
                                                                         // Perform an update operation
-                                                                        contactLicenseResponse = await httpAccountLicenseClient.PatchAsync($"{apiUrl}psa_contactLicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
+                                                                        contactLicenseResponse = await httpContactLicenseClient.PatchAsync($"{apiUrl}psa_contactLicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
                                                                     }
 
                                                                     // Read the response body
-                                                                    string contactResponseBody = await contactLicenseResponse.Content.ReadAsStringAsync();
-                                                                    Console.WriteLine(contactResponseBody);
+                                                                    string contactLicenseResponseBody = await contactLicenseResponse.Content.ReadAsStringAsync();
+                                                                    Console.WriteLine(contactLicenseResponseBody);
                                                                     return new OkObjectResult("Contact Licenses processed successfully");
                                                                 }
 
