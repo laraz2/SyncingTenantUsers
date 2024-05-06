@@ -15,8 +15,8 @@ namespace SyncingTenantUsers.Models.AccountLicenses
         public string psa_accountlicensesid { get; set; } = "";//unique id of the table
         public string psa_quantityassigned { get; set; } = "";//consumedUnits
         public string psa_quantitypurchased { get; set; } = "";//enabled
-        public string psa_lastlicenserefresh { get; set; } = "";//utc now
-        public string psa_startdate { get; set; } = "";
-        public string psa_enddate { get; set; } = "";
+        //public string psa_lastlicenserefresh { get; set; } = "";//utc now
+        //public string psa_startdate { get; set; } = "";
+        //public string psa_enddate { get; set; } = "";
     }
 }
