@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Xrm.Sdk;
 using System.Xml;
 using Newtonsoft.Json;
+using SyncingTenantUsers.Models.ContactLicenses;
 
 namespace SyncingTenantUsers.Models.Contacts
 {
@@ -25,7 +26,5 @@ namespace SyncingTenantUsers.Models.Contacts
         public string adx_identity_username { get; set; } = "";
 
         public string emailaddress1 { get; set; } = "";
-
-
     }
 }

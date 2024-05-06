@@ -7,12 +7,14 @@ using System.Threading.Tasks;
 
 namespace SyncingTenantUsers.Models.AccountLicenses
 {
-    public class AccountLicensesModel
+    public class AccountLicensesInputModel
     {
-        [JsonProperty("psa_accountname_account@odata.bind")]
-        public string psa_accountname_account_odata_bind { get; set; } = "";
+        [JsonProperty("psa_accountName@odata.bind")]
+        public string psa_accountName_odata_bind { get; set; } = "";
        // public string psa_lastlicenserefresh { get; set; } = ""; fill it business rule with modified date
         public string psa_licenseid { get; set; } = "";//skuId
+        public string psa_accountlicensenumber { get; set; } = "";//skuPartNumber,primary field in table account
+        //public string psa_accountlicensesid { get; set; } = "";//unique id of the table
         public string psa_quantityassigned { get; set; } = "";//consumedUnits
         public string psa_quantitypurchased { get; set; } = "";//enabled
         public string psa_lastlicenserefresh { get; set; } = "";//utc now

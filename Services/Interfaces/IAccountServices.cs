@@ -12,7 +12,7 @@ namespace SyncingTenantUsers
     {
         Task<IActionResult> GetAccounts();
         Task<string> AcquireAccessToken(string clientId, string clientSecret, string tokenEndpointUrl);
-        Task<List<InputContactModel>> GetUsersFromGraphApi(HttpClient httpClient, string accessToken, string accountId);
+        Task<List<ContactModel>> GetUsersFromGraphApi(HttpClient httpClient, string accessToken, string accountId);
         //Task<string> CheckIfContactExists(ContactModel contact,string accountName);
 
         // Task<IActionResult> GetAccounts(Microsoft.Azure.WebJobs.ExecutionContext context);
