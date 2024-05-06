@@ -778,7 +778,7 @@ namespace SyncingTenantUsers.Services
                         }
                     }
                     //return list of contacts
-                    Console.WriteLine(users.Count);
+                    Console.WriteLine(users.Count);//hii
                     return users;
 
                 }
