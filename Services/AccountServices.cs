@@ -95,7 +95,6 @@ namespace SyncingTenantUsers.Services
                                     // Extract the necessary fields and create AccountLicensesModel objects
                                     foreach (var customerLicense in CustomerLicenseResult.value)
                                     {
-                                        //Console.WriteLine(customerLicense.prepaidUnits.enabled);
                                         CustomerLicensesModel customerLicenseModel = new CustomerLicensesModel
                                         {
                                             psa_accountName_odata_bind = $"/accounts({accountId})",
@@ -109,7 +108,7 @@ namespace SyncingTenantUsers.Services
                                         };
                                         customerLicenses.Add(customerLicenseModel);
                                     }
-                                    Console.WriteLine(customerLicenses.Count);
+                                   // Console.WriteLine(customerLicenses.Count);
                                 }
                                 // Get access token for the accountLicenses table
                                 string accountLicenseAccessToken = await dataverseAuth.GetAccessToken();
@@ -226,7 +225,7 @@ namespace SyncingTenantUsers.Services
                                                                 };
                                                                 userLicenses.Add(UserLicenseModel);
                                                             }
-                                                            Console.WriteLine(userLicenses.Count);
+                                                           // Console.WriteLine(userLicenses.Count);
                                                             // Get contact licenses from Dataverse
                                                             string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
 
@@ -451,7 +450,7 @@ namespace SyncingTenantUsers.Services
                                                         var logContactJson = JsonConvert.DeserializeObject<JObject>(createContactResponseContent);
                                                         ContactModel outputContactModel = logJson.ToObject<ContactModel>();
                                                         contactId = outputContactModel.contactid;
-                                                        List<UserLicensesModel> userLicensesList = new List<UserLicensesModel>();
+                                                        List<UserLicensesModel> userLicenses = new List<UserLicensesModel>();
 
                                                         // Send the GET request to get the subscribed SKUsFor that Tenant,userLicenses
                                                         string apiUrlUserLicenses = $"https://graph.microsoft.com/v1.0/users?$filter=mail ne null&$top=999&$count=true&&$select=id,username,userPrincipalName,givenName,surname,displayName,mail,assignedLicenses,assignedPlans";
@@ -480,11 +479,11 @@ namespace SyncingTenantUsers.Services
                                                                         psa_ContactPrincipalName_odata_bind = $"/contacts({contactId})",
                                                                         psa_productstringid = userLicense.assignedPlans.servicePlanId.ToString(),
                                                                     };
-                                                                    userLicensesList.Add(UserLicenseModel);
+                                                                    userLicenses.Add(UserLicenseModel);
                                                                 }
 
                                                             }
-                                                            Console.WriteLine(userLicensesList.Count);
+                                                           // Console.WriteLine(userLicenses.Count);
                                                             // Get contact licenses from Dataverse
                                                             string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
 
@@ -505,15 +504,15 @@ namespace SyncingTenantUsers.Services
                                                                 List<ContactLicensesOutputModel> contactLicenses = contactLicensesJsonObject.GetValue("value").ToObject<List<ContactLicensesOutputModel>>();
 
                                                                 // Loop through each contact License
-                                                                foreach (var cl in contactLicenses)
+                                                                foreach (var userLicense in userLicenses)
                                                                 {
 
                                                                     // Serialize the userLicense object to JSON
-                                                                    string jsonContactLicense = JsonConvert.SerializeObject(cl);
+                                                                    string jsonContactLicense = JsonConvert.SerializeObject(userLicense);
                                                                     HttpContent createContactLicenseContent = new StringContent(jsonContactLicense, Encoding.UTF8, "application/json");//input model
 
                                                                     // Check if the contactLicense is already in the accountlicenses list
-                                                                    if (contactLicenses.Find(u => u.psa_productstringid == cl.psa_productstringid) == null)
+                                                                    if (contactLicenses.Find(u => u.psa_productstringid == userLicense.psa_productstringid) == null)
                                                                     {
                                                                         // Perform an insert operation
                                                                         contactLicenseResponse = await httpAccountLicenseClient.PostAsync($"{apiUrl}psa_contactLicenseses", createContactLicenseContent);
@@ -521,7 +520,7 @@ namespace SyncingTenantUsers.Services
                                                                     else
                                                                     {
                                                                         // Find the existing account license
-                                                                        ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u.psa_productstringid == cl.psa_productstringid);
+                                                                        ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u.psa_productstringid == userLicense.psa_productstringid);
 
                                                                         // Perform an update operation
                                                                         contactLicenseResponse = await httpAccountLicenseClient.PatchAsync($"{apiUrl}psa_contactLicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
@@ -584,7 +583,7 @@ namespace SyncingTenantUsers.Services
                                                                 };
                                                                 userLicenses.Add(UserLicenseModel);
                                                             }
-                                                            Console.WriteLine(userLicenses.Count);
+                                                           // Console.WriteLine(userLicenses.Count);
                                                             string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
 
                                                             // Set authorization header
@@ -774,11 +773,11 @@ namespace SyncingTenantUsers.Services
 
                             };
                             users.Add(user);
-                            Console.WriteLine(user);
+                            //Console.WriteLine(user);
                         }
                     }
                     //return list of contacts
-                    Console.WriteLine(users.Count);//hii
+                    //Console.WriteLine(users.Count);
                     return users;
 
                 }
