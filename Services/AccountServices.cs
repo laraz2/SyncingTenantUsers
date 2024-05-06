@@ -108,7 +108,7 @@ namespace SyncingTenantUsers.Services
                                         };
                                         customerLicenses.Add(customerLicenseModel);
                                     }
-                                   // Console.WriteLine(customerLicenses.Count);
+                                    // Console.WriteLine(customerLicenses.Count);
                                 }
                                 // Get access token for the accountLicenses table
                                 string accountLicenseAccessToken = await dataverseAuth.GetAccessToken();
@@ -225,7 +225,7 @@ namespace SyncingTenantUsers.Services
                                                                 };
                                                                 userLicenses.Add(UserLicenseModel);
                                                             }
-                                                           // Console.WriteLine(userLicenses.Count);
+                                                            // Console.WriteLine(userLicenses.Count);
                                                             // Get contact licenses from Dataverse
                                                             string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
 
@@ -483,7 +483,7 @@ namespace SyncingTenantUsers.Services
                                                                 }
 
                                                             }
-                                                           // Console.WriteLine(userLicenses.Count);
+                                                            // Console.WriteLine(userLicenses.Count);
                                                             // Get contact licenses from Dataverse
                                                             string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
 
@@ -583,7 +583,7 @@ namespace SyncingTenantUsers.Services
                                                                 };
                                                                 userLicenses.Add(UserLicenseModel);
                                                             }
-                                                           // Console.WriteLine(userLicenses.Count);
+                                                            // Console.WriteLine(userLicenses.Count);
                                                             string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
 
                                                             // Set authorization header
