@@ -9,11 +9,11 @@ namespace SyncingTenantUsers.Models.ContactLicenses
 {
     public class ContactLicensesOutputModel
     {
-        public string _psa_accountLicenseId_value { get; set; } = "";//lookup at table 
         
-        public string _psa_ContactPrincipalName_value{ get; set; } = "";//lookup at table contact
-
-        public string psa_productstringid { get; set; } = "";//id of license for now string after lookup    ,//assignedPlans.servicePlanId
+        
+        public string _psa_contactprincipalname_value { get; set; } = "";//lookup at table contact
+        
+        public string _psa_productstringid_value { get; set; } = "";//lookup to table product Licenses
         public string psa_contactlicensesid { get; set; } = "";//unique id of the table
                                                             
     }
