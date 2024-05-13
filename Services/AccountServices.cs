@@ -182,8 +182,9 @@ namespace SyncingTenantUsers.Services
                                             string jsonCustomerLicense = JsonConvert.SerializeObject(customerLicense);
                                             HttpContent createAccountLicenseContent = new StringContent(jsonCustomerLicense, Encoding.UTF8, "application/json");//input model
 
+                                            var licenseId = customerLicense.psa_licenseid;
                                             // Check if the customerLicense is already in the accountlicenses table
-                                            if (accountLicenses.Find(u => u.psa_licenseid == customerLicense.psa_licenseid) == null)
+                                            if (accountLicenses.Find(u => u.psa_licenseid == licenseId) == null)
                                             {
                                                 // Perform an insert operation
                                                 // accountLicenseResponse = await httpAccountLicenseClient.PostAsync($"{apiUrl}psa_accountlicenseses", createAccountLicenseContent);
@@ -487,10 +488,10 @@ namespace SyncingTenantUsers.Services
                                             else
                                             {
                                                 // Find the existing account license
-                                                AccountLicensesOutputModel accountLicense = accountLicenses.Find(u => u.psa_licenseid == customerLicense.psa_licenseid);
+                                                AccountLicensesOutputModel accountLicense = accountLicenses.Find(u => u.psa_licenseid == licenseId);
                                                 string accountLicenseId = accountLicense.psa_accountlicensesid;
                                                 // Perform an update operation
-                                                accountLicenseResponse = await httpAccountLicenseClient.PatchAsync($"{apiUrl}psa_accountlicenseses({accountLicense.psa_accountlicensesid})", createAccountLicenseContent);
+                                                accountLicenseResponse = await httpAccountLicenseClient.PatchAsync($"{apiUrl}psa_accountlicenseses({accountLicenseId})", createAccountLicenseContent);
 
                                                 //get contacts from dataverse
                                                 string contactAccessToken = await dataverseAuth.GetAccessToken();
