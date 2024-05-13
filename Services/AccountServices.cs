@@ -17,6 +17,7 @@ using SyncingTenantUsers.Models.ContactLicenses;
 using Newtonsoft.Json.Linq;
 using SyncingTenantUsers.Models.User_Licenses;
 using SyncingTenantUsers.Models.M365_Products;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 
 
 namespace SyncingTenantUsers.Services
@@ -113,41 +114,31 @@ namespace SyncingTenantUsers.Services
                                         // Extract the necessary fields and create AccountLicensesModel objects
                                         foreach (var customerLicense in CustomerLicenseResult.value)
                                         {
-                                            bool foundMatch = false; // Flag to track if a matching product is found
+                                            var matchingProduct = m365ProductList.FirstOrDefault(product => product.psa_guid == customerLicense.skuId.ToString());
 
-                                            foreach (var product in m365ProductsJsonObject.value)
+                                            if (matchingProduct != null)
                                             {
-                                                // Cast the dynamic product to the M365ProductsModel type
-                                                var typedProduct = product.ToObject<M365ProductsModel>();
-
-                                                if (typedProduct.psa_guid == customerLicense.skuId.ToString())
+                                                var m365ProductId = matchingProduct.psa_m365productsid;
+                                                CustomerLicensesModel customerLicenseModel = new CustomerLicensesModel
                                                 {
-                                                    var m365ProductId = typedProduct.psa_m365productsid;
-                                                    CustomerLicensesModel customerLicenseModel = new CustomerLicensesModel
-                                                    {
-                                                        psa_accountName_odata_bind = $"/accounts({accountId})",
-                                                        psa_accountlicensenumber = accountName + " - " + customerLicense.skuPartNumber,
-                                                        psa_licenseid = customerLicense.skuId, //guid
-                                                        psa_quantityassigned = customerLicense.consumedUnits,
-                                                        psa_quantitypurchased = customerLicense.prepaidUnits.enabled,
-                                                        //psa_lastlicenserefresh = DateTime.UtcNow.ToString(),
-                                                        //psa_startdate = DateTime.UtcNow.ToString(),
-                                                        //psa_enddate = DateTime.UtcNow.ToString(),
-                                                        psa_ProductStringId_odata_bind = $"/psa_m365productses({m365ProductId})"
-                                                    };
-                                                    customerLicenses.Add(customerLicenseModel);
-
-                                                    foundMatch = true; // Set flag to true indicating a match is found
-                                                    break; // No need to continue looping once a match is found
-                                                }
+                                                    psa_accountName_odata_bind = $"/accounts({accountId})",
+                                                    psa_accountlicensenumber = accountName + " - " + customerLicense.skuPartNumber,
+                                                    psa_licenseid = customerLicense.skuId, //guid
+                                                    psa_quantityassigned = customerLicense.consumedUnits,
+                                                    psa_quantitypurchased = customerLicense.prepaidUnits.enabled,
+                                                    //psa_lastlicenserefresh = DateTime.UtcNow.ToString(),
+                                                    //psa_startdate = DateTime.UtcNow.ToString(),
+                                                    //psa_enddate = DateTime.UtcNow.ToString(),
+                                                    psa_ProductStringId_odata_bind = $"/psa_m365productses({m365ProductId})"
+                                                };
+                                                customerLicenses.Add(customerLicenseModel);
                                             }
-
-                                            // Check if no match is found for the current customer license
-                                            if (!foundMatch)
+                                            else
                                             {
-                                                // Skip the current customer license if no match is found
                                                 continue;
                                             }
+                                             
+                                            
                                         }
 
 
@@ -185,6 +176,8 @@ namespace SyncingTenantUsers.Services
                                         // Loop through each customer License from api
                                         foreach (var customerLicense in customerLicenses)//32
                                         {
+                                           var nb=customerLicenses.Count();
+                                            Console.WriteLine("Nbr of the customer licenses is :{nb}");
                                             // Serialize the customer license object to JSON
                                             string jsonCustomerLicense = JsonConvert.SerializeObject(customerLicense);
                                             HttpContent createAccountLicenseContent = new StringContent(jsonCustomerLicense, Encoding.UTF8, "application/json");//input model
@@ -244,16 +237,23 @@ namespace SyncingTenantUsers.Services
                                                         // Extract the necessary fields and create User_LicensesModel objects,loop through user_License List
                                                         foreach (var user_License in User_LicenseResult.value)
                                                         {
-                                                            string displayName = user_License["displayName"];
-                                                            string[] nameParts = displayName.Split(' ');
-
-                                                            string userFirstName = nameParts[0];
-                                                            string userLastName = string.Join(' ', nameParts.Skip(1));
                                                             // Check if the userPrincipalName contains "#EXT#", if it does, skip
                                                             if (user_License["userPrincipalName"].ToString().Contains("#EXT#"))
                                                             {
                                                                 continue;
                                                             }
+                                                            // Check if assignedLicenses is not null and contains any elements
+                                                            if (user_License["assignedLicenses"] == null || user_License["assignedLicenses"].Count == 0)
+                                                            {
+                                                                // Skip processing users with no assigned licenses
+                                                                continue;
+                                                            }
+                                                            string displayName = user_License["displayName"];
+                                                            string[] nameParts = displayName.Split(' ');
+
+                                                            string userFirstName = nameParts[0];
+                                                            string userLastName = string.Join(' ', nameParts.Skip(1));
+
 
                                                             UsersModel user = new UsersModel
                                                             {
@@ -266,7 +266,11 @@ namespace SyncingTenantUsers.Services
                                                             };
                                                             // Add the license model to the list
                                                             users.Add(user);
+                                                            // Count the number of assigned licenses
+                                                            //int numberOfLicenses = user_License["assignedLicenses"].Count;
 
+                                                            //// Print the count
+                                                            //Console.WriteLine($"Number of assigned licenses for {userFirstName} {userLastName}: {numberOfLicenses}");
                                                             string jsonUser = JsonConvert.SerializeObject(user);
                                                             HttpContent createContactContent = new StringContent(jsonUser, Encoding.UTF8, "application/json");
 
@@ -289,20 +293,24 @@ namespace SyncingTenantUsers.Services
                                                                 contactId = outputContactModel.contactid;
                                                                 foreach (var license in user_License.assignedLicenses)
                                                                 {
-                                                                    // Assuming m365ProductList is available here
-                                                                    var m365product = m365ProductList.FirstOrDefault(u => u.psa_guid == license.skuId.ToString());
-                                                                    var m365productId = m365product.psa_m365productsid;
-                                                                    if (m365productId != null)
+                                                                    var nbr = user_License.assignedLicenses.Count;
+                                                                    Console.WriteLine($"Number of assigned licenses for {user.adx_identity_username} is {nbr}");
+                                                                    var m365product = m365ProductList.FirstOrDefault(u => u.psa_guid?.ToString() == license.skuId?.ToString());
+
+                                                                    var accountlicense = accountLicenses.FirstOrDefault(u => u.psa_licenseid.ToString() == license.skuId?.ToString());
+
+                                                                    if (m365product != null && accountlicense != null)
                                                                     {
+                                                                        var m365productId = m365product.psa_m365productsid;
+                                                                        var accountlicenseid = accountlicense.psa_accountlicensesid;
                                                                         // Create UserLicensesModel object for each assigned license
                                                                         UserLicensesModel userLicenseModel = new UserLicensesModel
                                                                         {
                                                                             psa_ContactPrincipalName_odata_bind = $"/contacts({contactId})",
-                                                                            psa_ProductStringId_odata_bind = $"/psa_m365productses({m365productId})"
-                                                                            // Add other properties as needed
+                                                                            psa_ProductStringId_odata_bind = $"/psa_m365productses({m365productId})",
+                                                                            psa_AccountLicenseId_odata_bind = $"/psa_accountlicenseses({accountlicenseid})"
                                                                         };
-                                                                        // Add userLicenseModel to wherever you need to store it
-                                                                        string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
+                                                                        string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses";//$filter=_psa_contactprincipalname_value eq {contactId}";//output model
 
                                                                         // Set authorization header 
                                                                         string contactLicenseAccessToken = await dataverseAuth.GetAccessToken();
@@ -310,6 +318,8 @@ namespace SyncingTenantUsers.Services
                                                                         httpContactLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", contactLicenseAccessToken);
 
                                                                         HttpResponseMessage contactLicenseResponse = await httpContactLicenseClient.GetAsync(contactLicenseUrl);
+
+                                                                        string r = await contactLicenseResponse.Content.ReadAsStringAsync();
 
                                                                         // Check if the request was successful
                                                                         if (contactLicenseResponse.IsSuccessStatusCode || ((int)contactLicenseResponse.StatusCode >= 200 && (int)contactLicenseResponse.StatusCode <= 209))
@@ -324,22 +334,31 @@ namespace SyncingTenantUsers.Services
                                                                             string jsonContactLicense = JsonConvert.SerializeObject(userLicenseModel);
                                                                             HttpContent createContactLicenseContent = new StringContent(jsonContactLicense, Encoding.UTF8, "application/json");//input model
 
-                                                                            // Check if the contactLicense is already in the accountlicenses list
-                                                                            if (contactLicenses.Find(u => u._psa_productstringid_value == userLicenseModel.psa_ProductStringId_odata_bind && u._psa_contactprincipalname_value == contactId) == null)
+                                                                            // Check if the contactLicense is already in the contactLicenses list
+                                                                            if (contactLicenses.Find(u => u._psa_productstringid_value == m365productId && u._psa_contactprincipalname_value == contactId && u._psa_accountlicenseid_value == accountlicenseid) == null)
                                                                             {
                                                                                 // Perform an insert operation
-                                                                                contactLicenseResponse = await httpContactLicenseClient.PostAsync($"{apiUrl}psa_contactLicenseses", createContactLicenseContent);
+                                                                                contactLicenseResponse = await httpContactLicenseClient.PostAsync($"{apiUrl}psa_contactlicenseses", createContactLicenseContent);
+                                                                                if (!contactLicenseResponse.IsSuccessStatusCode)
+                                                                                {
+
+                                                                                    // write erro to log file
+                                                                                }
                                                                             }
                                                                             else
                                                                             {
                                                                                 // Find the existing account license
-                                                                                ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u._psa_productstringid_value == userLicenseModel.psa_ProductStringId_odata_bind && u._psa_contactprincipalname_value == contactId);
+                                                                                ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u._psa_productstringid_value == m365productId && u._psa_contactprincipalname_value == contactId && u._psa_accountlicenseid_value == accountlicenseid);
 
                                                                                 // Perform an update operation
-                                                                                contactLicenseResponse = await httpContactLicenseClient.PatchAsync($"{apiUrl}psa_contactLicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
-                                                                            }
-                                                                            return new OkObjectResult("Contact Licenses processed successfully");
+                                                                                contactLicenseResponse = await httpContactLicenseClient.PatchAsync($"{apiUrl}psa_contactlicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
+                                                                                if (!contactLicenseResponse.IsSuccessStatusCode)
+                                                                                {
 
+                                                                                    // write erro to log file
+                                                                                }
+
+                                                                            }
 
                                                                         }
                                                                         else
@@ -349,33 +368,36 @@ namespace SyncingTenantUsers.Services
                                                                     }
                                                                     else
                                                                     {
-                                                                        return new ObjectResult("Product License Not found !") { StatusCode = StatusCodes.Status500InternalServerError };
+                                                                        continue;
                                                                     }
                                                                 }
                                                             }
                                                             else
                                                             {
                                                                 var contact = contacts.Find(u => u.emailaddress1 == user.emailaddress1);
-                                                                // Perform an update operation
-                                                                contact365Response = await httpContactClient.PatchAsync($"{apiUrl}contacts({contact.contactid})", createContactContent);
                                                                 contactId = contact.contactid;
+                                                                // Perform an update operation
+                                                                contact365Response = await httpContactClient.PatchAsync($"{apiUrl}contacts({contactId})", createContactContent);
                                                                 foreach (var license in user_License.assignedLicenses)
                                                                 {
-                                                                    // Assuming m365ProductList is available here
-                                                                    var m365product = m365ProductList.FirstOrDefault(u => u.psa_guid == license.skuId.ToString());
-                                                                    var m365productId = m365product.psa_m365productsid;
-                                                                    if (m365productId != null)
+                                                                    var nbr = user_License.assignedLicenses.Count;
+                                                                    Console.WriteLine($"Number of assigned licenses for {user.adx_identity_username} is {nbr}");
+                                                                    var m365product = m365ProductList.FirstOrDefault(u => u.psa_guid?.ToString() == license.skuId?.ToString());
+
+                                                                    var accountlicense = accountLicenses.FirstOrDefault(u => u.psa_licenseid.ToString() == license.skuId?.ToString());
+
+                                                                    if (m365product != null && accountlicense != null)
                                                                     {
-                                                                        //var m365productId = m365product.psa_m365productsid;
+                                                                        var m365productId = m365product.psa_m365productsid;
+                                                                        var accountlicenseid = accountlicense.psa_accountlicensesid;
                                                                         // Create UserLicensesModel object for each assigned license
                                                                         UserLicensesModel userLicenseModel = new UserLicensesModel
                                                                         {
                                                                             psa_ContactPrincipalName_odata_bind = $"/contacts({contactId})",
-                                                                            psa_ProductStringId_odata_bind = $"/psa_m365productses({m365productId})"
-                                                                            // Add other properties as needed
+                                                                            psa_ProductStringId_odata_bind = $"/psa_m365productses({m365productId})",
+                                                                            psa_AccountLicenseId_odata_bind = $"/psa_accountlicenseses({accountlicenseid})"
                                                                         };
-                                                                        // Add userLicenseModel to wherever you need to store it
-                                                                        string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses?$filter=psa_contactprincipalname eq {contactId}";//output model
+                                                                        string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses";//$filter=_psa_contactprincipalname_value eq {contactId}";//output model
 
                                                                         // Set authorization header 
                                                                         string contactLicenseAccessToken = await dataverseAuth.GetAccessToken();
@@ -383,6 +405,8 @@ namespace SyncingTenantUsers.Services
                                                                         httpContactLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", contactLicenseAccessToken);
 
                                                                         HttpResponseMessage contactLicenseResponse = await httpContactLicenseClient.GetAsync(contactLicenseUrl);
+
+                                                                        string r = await contactLicenseResponse.Content.ReadAsStringAsync();
 
                                                                         // Check if the request was successful
                                                                         if (contactLicenseResponse.IsSuccessStatusCode || ((int)contactLicenseResponse.StatusCode >= 200 && (int)contactLicenseResponse.StatusCode <= 209))
@@ -397,22 +421,31 @@ namespace SyncingTenantUsers.Services
                                                                             string jsonContactLicense = JsonConvert.SerializeObject(userLicenseModel);
                                                                             HttpContent createContactLicenseContent = new StringContent(jsonContactLicense, Encoding.UTF8, "application/json");//input model
 
-                                                                            // Check if the contactLicense is already in the accountlicenses list
-                                                                            if (contactLicenses.Find(u => u._psa_productstringid_value == userLicenseModel.psa_ProductStringId_odata_bind && u._psa_contactprincipalname_value == contactId) == null)
+                                                                            // Check if the contactLicense is already in the contactLicenses list
+                                                                            if (contactLicenses.Find(u => u._psa_productstringid_value == m365productId && u._psa_contactprincipalname_value == contactId && u._psa_accountlicenseid_value == accountlicenseid) == null)
                                                                             {
                                                                                 // Perform an insert operation
                                                                                 contactLicenseResponse = await httpContactLicenseClient.PostAsync($"{apiUrl}psa_contactlicenseses", createContactLicenseContent);
+                                                                                if (!contactLicenseResponse.IsSuccessStatusCode)
+                                                                                {
+
+                                                                                    // write erro to log file
+                                                                                }
                                                                             }
                                                                             else
                                                                             {
                                                                                 // Find the existing account license
-                                                                                ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u._psa_productstringid_value == userLicenseModel.psa_ProductStringId_odata_bind && u._psa_contactprincipalname_value == contactId);
+                                                                                ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u._psa_productstringid_value == m365productId && u._psa_contactprincipalname_value == contactId && u._psa_accountlicenseid_value == accountlicenseid);
 
                                                                                 // Perform an update operation
                                                                                 contactLicenseResponse = await httpContactLicenseClient.PatchAsync($"{apiUrl}psa_contactlicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
-                                                                            }
-                                                                            return new OkObjectResult("Contact Licenses processed successfully");
+                                                                                if (!contactLicenseResponse.IsSuccessStatusCode)
+                                                                                {
 
+                                                                                    // write erro to log file
+                                                                                }
+
+                                                                            }
 
                                                                         }
                                                                         else
@@ -422,7 +455,7 @@ namespace SyncingTenantUsers.Services
                                                                     }
                                                                     else
                                                                     {
-                                                                        return new ObjectResult("Product License Not found !") { StatusCode = StatusCodes.Status500InternalServerError };
+                                                                        continue;
                                                                     }
                                                                 }
 
@@ -431,7 +464,10 @@ namespace SyncingTenantUsers.Services
 
                                                         }
 
+                                                        Console.WriteLine(users.Count);
+
                                                     }
+
                                                     else
                                                     {
 
@@ -452,7 +488,7 @@ namespace SyncingTenantUsers.Services
                                             {
                                                 // Find the existing account license
                                                 AccountLicensesOutputModel accountLicense = accountLicenses.Find(u => u.psa_licenseid == customerLicense.psa_licenseid);
-                                                var accountLicenseId = accountLicense.psa_accountlicensesid;
+                                                string accountLicenseId = accountLicense.psa_accountlicensesid;
                                                 // Perform an update operation
                                                 accountLicenseResponse = await httpAccountLicenseClient.PatchAsync($"{apiUrl}psa_accountlicenseses({accountLicense.psa_accountlicensesid})", createAccountLicenseContent);
 
@@ -492,17 +528,23 @@ namespace SyncingTenantUsers.Services
                                                         // Extract the necessary fields and create User_LicensesModel objects,loop through user_License List
                                                         foreach (var user_License in User_LicenseResult.value)
                                                         {
-                                                            string displayName = user_License["displayName"];
-                                                            string[] nameParts = displayName.Split(' ');
-
-                                                            string userFirstName = nameParts[0];
-                                                            string userLastName = string.Join(' ', nameParts.Skip(1));
                                                             // Check if the userPrincipalName contains "#EXT#", if it does, skip
                                                             if (user_License["userPrincipalName"].ToString().Contains("#EXT#"))
                                                             {
                                                                 continue;
                                                             }
+                                                            // Check if assignedLicenses is not null and contains any elements
+                                                            if (user_License["assignedLicenses"] == null || user_License["assignedLicenses"].Count == 0)
+                                                            {
+                                                                // Skip processing users with no assigned licenses
+                                                                continue;
+                                                            }
+                                                            string displayName = user_License["displayName"];
+                                                            string[] nameParts = displayName.Split(' ');
 
+                                                            string userFirstName = nameParts[0];
+                                                            string userLastName = string.Join(' ', nameParts.Skip(1));
+                                                          
                                                             UsersModel user = new UsersModel
                                                             {
                                                                 parentcustomerid_account_odata_bind = $"/accounts({accountId})",
@@ -515,10 +557,10 @@ namespace SyncingTenantUsers.Services
                                                             // Add the license model to the list
                                                             users.Add(user);
                                                             // Count the number of assigned licenses
-                                                            int numberOfLicenses = user_License["assignedLicenses"].Count;
+                                                            //int numberOfLicenses = user_License["assignedLicenses"].Count;
 
-                                                            // Print the count
-                                                            Console.WriteLine($"Number of assigned licenses for {userFirstName} {userLastName}: {numberOfLicenses}");
+                                                            //// Print the count
+                                                            //Console.WriteLine($"Number of assigned licenses for {userFirstName} {userLastName}: {numberOfLicenses}");
                                                             string jsonUser = JsonConvert.SerializeObject(user);
                                                             HttpContent createContactContent = new StringContent(jsonUser, Encoding.UTF8, "application/json");
 
@@ -541,95 +583,24 @@ namespace SyncingTenantUsers.Services
                                                                 contactId = outputContactModel.contactid;
                                                                 foreach (var license in user_License.assignedLicenses)
                                                                 {
-                                                                    Console.WriteLine(user_License.assignedLicenses.count);
-                                                                    // Assuming m365ProductList is available here
-                                                                    var m365product = m365ProductList.FirstOrDefault(u => u.psa_guid == license.skuId.ToString());
-                                                                    var m365productId = m365product.psa_m365productsid;
-                                                                    if (m365productId != null)
-                                                                    {
-                                                                        //var m365productId = m365product.psa_m365productsid;
-                                                                        // Create user_LicenseLicensesModel object for each assigned license
-                                                                        UserLicensesModel userLicenseModel = new UserLicensesModel
-                                                                        {
-                                                                            psa_ContactPrincipalName_odata_bind = $"/contacts({contactId})",
-                                                                            psa_ProductStringId_odata_bind = $"/psa_m365productses({m365productId})"
-                                                                        };
-                                                                        string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses ";//?$filter=_psa_contactprincipalname_value eq {contactId}";//output model
+                                                                    var nbr = user_License.assignedLicenses.Count;
+                                                                    Console.WriteLine($"Number of assigned licenses for {user.adx_identity_username} is {nbr}");
+                                                                    var m365product = m365ProductList.FirstOrDefault(u => u.psa_guid?.ToString() == license.skuId?.ToString());
 
-                                                                        // Set authorization header 
-                                                                        string contactLicenseAccessToken = await dataverseAuth.GetAccessToken();
-                                                                        using HttpClient httpContactLicenseClient = new HttpClient();
-                                                                        httpContactLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", contactLicenseAccessToken);
+                                                                    var accountlicense = accountLicenses.FirstOrDefault(u => u.psa_licenseid.ToString() == license.skuId?.ToString());
 
-                                                                        HttpResponseMessage contactLicenseResponse = await httpContactLicenseClient.GetAsync(contactLicenseUrl);
-                                                                        // Check if the request was successful
-                                                                        if (contactLicenseResponse.IsSuccessStatusCode || ((int)contactLicenseResponse.StatusCode >= 200 && (int)contactLicenseResponse.StatusCode <= 209))
-                                                                        {
-                                                                            // Deserialize the contact license response JSON
-                                                                            dynamic contactLicensesJsonObject = JsonConvert.DeserializeObject(await contactLicenseResponse.Content.ReadAsStringAsync());
-
-                                                                            // Extract the list of contact licenses
-                                                                            List<ContactLicensesOutputModel> contactLicenses = contactLicensesJsonObject.GetValue("value").ToObject<List<ContactLicensesOutputModel>>();
-
-                                                                            // Serialize the userLicense object to JSON
-                                                                            string jsonContactLicense = JsonConvert.SerializeObject(userLicenseModel);
-                                                                            HttpContent createContactLicenseContent = new StringContent(jsonContactLicense, Encoding.UTF8, "application/json");//input model
-
-                                                                            // Check if the contactLicense is already in the contactLicenses list
-                                                                            if (contactLicenses.Find(u => u._psa_productstringid_value == userLicenseModel.psa_ProductStringId_odata_bind && u._psa_contactprincipalname_value == contactId) == null)
-                                                                            {
-                                                                                // Perform an insert operation
-                                                                                contactLicenseResponse = await httpContactLicenseClient.PostAsync($"{apiUrl}psa_contactlicenseses", createContactLicenseContent);
-                                                                                string responsek = await contactLicenseResponse.Content.ReadAsStringAsync();
-                                                                                Console.WriteLine(responsek);
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                // Find the existing account license
-                                                                                ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u._psa_productstringid_value == userLicenseModel.psa_ProductStringId_odata_bind && u._psa_contactprincipalname_value == contactId);
-
-                                                                                // Perform an update operation
-                                                                                contactLicenseResponse = await httpContactLicenseClient.PatchAsync($"{apiUrl}psa_contactlicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
-                                                                                string responsek = await contactLicenseResponse.Content.ReadAsStringAsync();
-                                                                                Console.WriteLine(responsek);
-                                                                            }
-                                                                            return new OkObjectResult("Contact Licenses processed successfully");
-
-
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                            return new ObjectResult("Failed to retrieve Contact Licenses from Dataverse") { StatusCode = StatusCodes.Status500InternalServerError };
-                                                                        }
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        continue;
-                                                                    }
-                                                                }
-                                                            }
-                                                            else
-                                                            {
-                                                                var contact = contacts.Find(u => u.emailaddress1 == user_License.emailaddress1);
-                                                                // Perform an update operation
-                                                                contact365Response = await httpContactClient.PatchAsync($"{apiUrl}contacts({contact.contactid})", createContactContent);
-                                                                contactId = contact.contactid;
-                                                                foreach (var license in user_License.assignedLicenses)
-                                                                {
-                                                                    // Assuming m365ProductList is available here
-                                                                    var m365product = m365ProductList.FirstOrDefault(u => u.psa_guid == license.skuId.ToString());
-                                                                   
-                                                                    if (m365product != null)
+                                                                    if (m365product != null && accountlicense != null)
                                                                     {
                                                                         var m365productId = m365product.psa_m365productsid;
+                                                                        var accountlicenseid = accountlicense.psa_accountlicensesid;
                                                                         // Create UserLicensesModel object for each assigned license
                                                                         UserLicensesModel userLicenseModel = new UserLicensesModel
                                                                         {
                                                                             psa_ContactPrincipalName_odata_bind = $"/contacts({contactId})",
-                                                                            psa_ProductStringId_odata_bind = $"/psa_m365productses({m365productId})"
-
+                                                                            psa_ProductStringId_odata_bind = $"/psa_m365productses({m365productId})",
+                                                                            psa_AccountLicenseId_odata_bind = $"/psa_accountlicenseses({accountlicenseid})"
                                                                         };
-                                                                        string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses ";//?$filter=_psa_contactprincipalname_value eq {contactId}";//output model
+                                                                        string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses";//$filter=_psa_contactprincipalname_value eq {contactId}";//output model
 
                                                                         // Set authorization header 
                                                                         string contactLicenseAccessToken = await dataverseAuth.GetAccessToken();
@@ -654,21 +625,118 @@ namespace SyncingTenantUsers.Services
                                                                             HttpContent createContactLicenseContent = new StringContent(jsonContactLicense, Encoding.UTF8, "application/json");//input model
 
                                                                             // Check if the contactLicense is already in the contactLicenses list
-                                                                            if (contactLicenses.Find(u => u._psa_productstringid_value == userLicenseModel.psa_ProductStringId_odata_bind && u._psa_contactprincipalname_value == contactId) == null)
+                                                                            if (contactLicenses.Find(u => u._psa_productstringid_value == m365productId && u._psa_contactprincipalname_value == contactId && u._psa_accountlicenseid_value == accountlicenseid) == null)
                                                                             {
                                                                                 // Perform an insert operation
                                                                                 contactLicenseResponse = await httpContactLicenseClient.PostAsync($"{apiUrl}psa_contactlicenseses", createContactLicenseContent);
+                                                                                if (!contactLicenseResponse.IsSuccessStatusCode)
+                                                                                {
+
+                                                                                    // write erro to log file
+                                                                                }
                                                                             }
                                                                             else
                                                                             {
                                                                                 // Find the existing account license
-                                                                                ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u._psa_productstringid_value == userLicenseModel.psa_ProductStringId_odata_bind && u._psa_contactprincipalname_value == contactId);
+                                                                                ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u._psa_productstringid_value == m365productId && u._psa_contactprincipalname_value == contactId && u._psa_accountlicenseid_value == accountlicenseid);
 
                                                                                 // Perform an update operation
                                                                                 contactLicenseResponse = await httpContactLicenseClient.PatchAsync($"{apiUrl}psa_contactlicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
-                                                                               
+                                                                                if (!contactLicenseResponse.IsSuccessStatusCode)
+                                                                                {
+
+                                                                                    // write erro to log file
+                                                                                }
+
                                                                             }
-                                                                            
+
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            return new ObjectResult("Failed to retrieve Contact Licenses from Dataverse") { StatusCode = StatusCodes.Status500InternalServerError };
+                                                                        }
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        continue;
+                                                                    }
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                var contact = contacts.Find(u => u.emailaddress1 == user.emailaddress1);
+                                                                contactId = contact.contactid;
+                                                                // Perform an update operation
+                                                                contact365Response = await httpContactClient.PatchAsync($"{apiUrl}contacts({contactId})", createContactContent);
+                                                                foreach (var license in user_License.assignedLicenses)
+                                                                {
+                                                                    var nbr = user_License.assignedLicenses.Count;
+                                                                    Console.WriteLine($"Number of assigned licenses for {user.adx_identity_username} is {nbr}");
+                                                                    var m365product = m365ProductList.FirstOrDefault(u => u.psa_guid?.ToString() == license.skuId?.ToString());
+
+                                                                    var accountlicense = accountLicenses.FirstOrDefault(u => u.psa_licenseid.ToString() == license.skuId?.ToString());
+                                                                    
+                                                                    if (m365product!=null && accountlicense != null)
+                                                                    {
+                                                                        var m365productId = m365product.psa_m365productsid;
+                                                                        var accountlicenseid = accountlicense.psa_accountlicensesid;
+                                                                        // Create UserLicensesModel object for each assigned license
+                                                                        UserLicensesModel userLicenseModel = new UserLicensesModel
+                                                                        {
+                                                                            psa_ContactPrincipalName_odata_bind = $"/contacts({contactId})",
+                                                                            psa_ProductStringId_odata_bind = $"/psa_m365productses({m365productId})",
+                                                                            psa_AccountLicenseId_odata_bind = $"/psa_accountlicenseses({accountlicenseid})"
+                                                                        };
+                                                                        string contactLicenseUrl = $"{apiUrl}psa_contactlicenseses";//$filter=_psa_contactprincipalname_value eq {contactId}";//output model
+
+                                                                        // Set authorization header 
+                                                                        string contactLicenseAccessToken = await dataverseAuth.GetAccessToken();
+                                                                        using HttpClient httpContactLicenseClient = new HttpClient();
+                                                                        httpContactLicenseClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", contactLicenseAccessToken);
+
+                                                                        HttpResponseMessage contactLicenseResponse = await httpContactLicenseClient.GetAsync(contactLicenseUrl);
+
+                                                                        string r = await contactLicenseResponse.Content.ReadAsStringAsync();
+
+                                                                        // Check if the request was successful
+                                                                        if (contactLicenseResponse.IsSuccessStatusCode || ((int)contactLicenseResponse.StatusCode >= 200 && (int)contactLicenseResponse.StatusCode <= 209))
+                                                                        {
+                                                                            // Deserialize the contact license response JSON
+                                                                            dynamic contactLicensesJsonObject = JsonConvert.DeserializeObject(await contactLicenseResponse.Content.ReadAsStringAsync());
+
+                                                                            // Extract the list of contact licenses
+                                                                            List<ContactLicensesOutputModel> contactLicenses = contactLicensesJsonObject.GetValue("value").ToObject<List<ContactLicensesOutputModel>>();
+
+                                                                            // Serialize the userLicense object to JSON
+                                                                            string jsonContactLicense = JsonConvert.SerializeObject(userLicenseModel);
+                                                                            HttpContent createContactLicenseContent = new StringContent(jsonContactLicense, Encoding.UTF8, "application/json");//input model
+
+                                                                            // Check if the contactLicense is already in the contactLicenses list
+                                                                            if (contactLicenses.Find(u => u._psa_productstringid_value == m365productId && u._psa_contactprincipalname_value == contactId  &&  u._psa_accountlicenseid_value == accountlicenseid) == null)
+                                                                            {
+                                                                                // Perform an insert operation
+                                                                                contactLicenseResponse = await httpContactLicenseClient.PostAsync($"{apiUrl}psa_contactlicenseses", createContactLicenseContent);
+                                                                                if (!contactLicenseResponse.IsSuccessStatusCode)
+                                                                                {
+                                                                                   
+                                                                                    // write erro to log file
+                                                                                }
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                // Find the existing account license
+                                                                                ContactLicensesOutputModel contactLicense = contactLicenses.Find(u => u._psa_productstringid_value == m365productId && u._psa_contactprincipalname_value == contactId && u._psa_accountlicenseid_value == accountlicenseid);
+
+                                                                                // Perform an update operation
+                                                                                contactLicenseResponse = await httpContactLicenseClient.PatchAsync($"{apiUrl}psa_contactlicenseses({contactLicense.psa_contactlicensesid})", createContactLicenseContent);
+                                                                                if (!contactLicenseResponse.IsSuccessStatusCode)
+                                                                                {
+
+                                                                                    // write erro to log file
+                                                                                }
+
+                                                                            }
+
                                                                         }
                                                                         else
                                                                         {
@@ -683,6 +751,7 @@ namespace SyncingTenantUsers.Services
 
 
                                                             }
+
                                                         }
 
                                                         Console.WriteLine(users.Count);
@@ -738,7 +807,7 @@ namespace SyncingTenantUsers.Services
                 {
                     return new ObjectResult("Failed to retrieve accounts from dataverse") { StatusCode = (int)accountResponse.StatusCode };
                 }
-                return null;
+                return new ObjectResult("something went wrong!");
             }
             catch (Exception ex)
             {
