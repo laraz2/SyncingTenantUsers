@@ -17,7 +17,6 @@ using SyncingTenantUsers.Models.ContactLicenses;
 using Newtonsoft.Json.Linq;
 using SyncingTenantUsers.Models.User_Licenses;
 using SyncingTenantUsers.Models.M365_Products;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 
 
 namespace SyncingTenantUsers.Services
@@ -36,11 +35,12 @@ namespace SyncingTenantUsers.Services
             try
             {
                 var appDirectory = Directory.GetCurrentDirectory();
-                var path = "C:\\Users\\Local_Admin\\source\\repos\\SyncingTenantUsers\\appsettings.json";
+            //    var path = "C:\\Users\\Local_Admin\\source\\repos\\SyncingTenantUsers\\appsettings.json";
 
                 IConfigurationRoot config = new ConfigurationBuilder()
-                    .AddJsonFile(path)
-                    .Build();
+                     .SetBasePath(Directory.GetCurrentDirectory())
+                     .AddJsonFile("appsettings.json")
+                     .Build();
 
                 string clientId = config["Authentication:ClientId"]!;
                 string clientSecret = config["Authentication:ClientSecret"]!;
