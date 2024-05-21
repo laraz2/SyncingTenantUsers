@@ -1,7 +1,4 @@
-﻿using Azure.Storage.Blobs;
-using Microsoft.Extensions.Configuration;
-using System.IO;
-using System.Text;
+﻿using Microsoft.Extensions.Configuration;
 using System;
 using SyncingTenantUsers.Models.ErrorModels;
 

@@ -36,11 +36,12 @@ namespace SyncingTenantUsers.Services
             try
             {
                 var appDirectory = Directory.GetCurrentDirectory();
-                var path = "C:\\Users\\Local_Admin\\source\\repos\\SyncingTenantUsers\\appsettings.json";
+            //    var path = "C:\\Users\\Local_Admin\\source\\repos\\SyncingTenantUsers\\appsettings.json";
 
                 IConfigurationRoot config = new ConfigurationBuilder()
-                    .AddJsonFile(path)
-                    .Build();
+                     .SetBasePath(Directory.GetCurrentDirectory())
+                     .AddJsonFile("appsettings.json")
+                     .Build();
 
                 string clientId = config["Authentication:ClientId"]!;
                 string clientSecret = config["Authentication:ClientSecret"]!;
