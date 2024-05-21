@@ -24,5 +24,7 @@ namespace SyncingTenantUsers.Models.Contacts
 
         public string emailaddress1 { get; set; } = "";
 
+        public string psa_lastsynceddate { get; set; } = "";
+
     }
 }

@@ -268,6 +268,7 @@ namespace SyncingTenantUsers.Services
                                                     lastname = userLastName,
                                                     emailaddress1 = user_License["mail"],
                                                     adx_identity_username = user_License["displayName"],
+                                                    psa_lastsynceddate = DateTime.UtcNow.ToString()
                                                 };
                                                 // Add the license model to the list
                                                 users.Add(user);

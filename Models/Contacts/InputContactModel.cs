@@ -18,6 +18,7 @@ namespace SyncingTenantUsers.Models.Contacts
         public string lastname { get; set; } = "";
         public string yomifullname { get; set; } = "";
         public string fullname { get; set; } = "";
+        public string psa_lastsynceddate { get; set; } = "";
         //public string jobtitle { get; set; } = "";
 
         [JsonProperty("parentcustomerid_account@odata.bind")]
