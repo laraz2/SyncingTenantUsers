@@ -424,8 +424,8 @@ namespace SyncingTenantUsers.Services
                                                     //Console.WriteLine(r);
                                                     foreach (var license in user_License.assignedLicenses)
                                                     {
-                                                        var nbr = user_License.assignedLicenses.Count;
-                                                        Console.WriteLine($"Number of assigned licenses for {user.adx_identity_username} is {nbr}");
+                                                        //var nbr = user_License.assignedLicenses.Count;
+                                                        //Console.WriteLine($"Number of assigned licenses for {user.adx_identity_username} is {nbr}");
                                                         var m365product = m365ProductList.FirstOrDefault(u => u.psa_guid?.ToString() == license.skuId?.ToString());
 
                                                         if (m365product != null)
