@@ -21,8 +21,9 @@ public class SyncAzureAccount
 
     [FunctionName("SyncAzureAccount")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req) // Change the ExecutionContext namespace
-       // ILogger log)
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req, Microsoft.Azure.WebJobs.ExecutionContext context, // Change the ExecutionContext namespace
+        ILogger log)
+
     {
         //_logger.LogInformation("C# HTTP trigger function processed a request.");
 
@@ -31,15 +32,15 @@ public class SyncAzureAccount
         try
         {
             // Your custom logic here to get accounts
-            var result = await _accountServices.GetAccounts();
-           // var result = await _accountServices.GetAccounts(context);
+            var result = await _accountServices.GetAccounts(context);
+            // var result = await _accountServices.GetAccounts(context);
 
             // Replace the response message with your actual response
             responseMessage = JsonConvert.SerializeObject(result);
         }
         catch (Exception ex)
         {
-           // _logger.LogError(ex, "An error occurred while processing the request.");
+            // _logger.LogError(ex, "An error occurred while processing the request.");
             Console.WriteLine(ex.ToString());
             return new StatusCodeResult(StatusCodes.Status500InternalServerError);
         }

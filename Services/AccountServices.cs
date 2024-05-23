@@ -17,8 +17,10 @@ using SyncingTenantUsers.Models.ContactLicenses;
 using Newtonsoft.Json.Linq;
 using SyncingTenantUsers.Models.User_Licenses;
 using SyncingTenantUsers.Models.M365_Products;
+using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 
 
+[assembly: FunctionsStartup(typeof(SyncingTenantUsers.Startup))]
 
 namespace SyncingTenantUsers.Services
 {
@@ -31,17 +33,20 @@ namespace SyncingTenantUsers.Services
             _configuration = configuration;
         }
 
-        public async Task<IActionResult> GetAccounts()
+        public async Task<IActionResult> GetAccounts(Microsoft.Azure.WebJobs.ExecutionContext context)
         {
             try
             {
                 var appDirectory = Directory.GetCurrentDirectory();
-            //    var path = "C:\\Users\\Local_Admin\\source\\repos\\SyncingTenantUsers\\appsettings.json";
+                var path = Path.Combine(context.FunctionAppDirectory, "appsettings.json");//{retrieves the directory path of the Azure Function App using Directory.GetCurrentDirectory()
+                                                                                          //Then, it constructs the path to the appsettings.json}
 
-                IConfigurationRoot config = new ConfigurationBuilder()
-                     .SetBasePath(Directory.GetCurrentDirectory())
-                     .AddJsonFile("appsettings.json")
-                     .Build();
+
+                IConfigurationRoot config = new ConfigurationBuilder()//{ConfigurationBuilder is used to build a configuration object (IConfigurationRoot) by adding the appsettings.json file to it.
+                                                                      //This allows the application to access configuration settings defined in the JSON file.}
+                    .SetBasePath(appDirectory)
+                    .AddJsonFile(path)
+                    .Build();
 
                 string clientId = config["Authentication:ClientId"]!;
                 string clientSecret = config["Authentication:ClientSecret"]!;
@@ -88,7 +93,7 @@ namespace SyncingTenantUsers.Services
                             string tokenEndpointUrl = $"https://login.microsoftonline.com/{tenantId}/oauth2/token";
 
                             // Acquire access token for the tenant in micros
-                            string LoginAccessToken = await AcquireAccessToken(accountClientId, accountClientSecret, tokenEndpointUrl);
+                            string LoginAccessToken = await AcquireAccessToken(accountClientId, accountClientSecret, tokenEndpointUrl,context);
 
                             if (LoginAccessToken != null)
                             {
@@ -121,10 +126,10 @@ namespace SyncingTenantUsers.Services
                                     // Send the GET request to get the subscribed SKUsFor that Tenant , customerLicenses
                                     string apiUrlCustomerLicenses = $"https://graph.microsoft.com/v1.0/subscribedSkus?$select=skuPartNumber,skuId,consumedUnits,prepaidUnits&$filter accountId eq '{tenantId}'";
                                     HttpClient httpClientCustomerLicenses = new HttpClient();
-                                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", LoginAccessToken);
-                                    httpClient.DefaultRequestHeaders.Add("ConsistencyLevel", "eventual");
+                                    httpClientCustomerLicenses.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", LoginAccessToken);
+                                    httpClientCustomerLicenses.DefaultRequestHeaders.Add("ConsistencyLevel", "eventual");
 
-                                    HttpResponseMessage CustomerLicenseResponse = await httpClient.GetAsync(apiUrlCustomerLicenses);
+                                    HttpResponseMessage CustomerLicenseResponse = await httpClientCustomerLicenses.GetAsync(apiUrlCustomerLicenses);
 
                                     if (CustomerLicenseResponse.IsSuccessStatusCode)
                                     {
@@ -201,6 +206,8 @@ namespace SyncingTenantUsers.Services
                                     }
                                     else
                                     {
+                                        //string  s = await CustomerLicenseResponse.Content.ReadAsStringAsync();
+                                        //Console.WriteLine(s);
                                         return new ObjectResult("Failed to get customer licenses from graph api") { StatusCode = StatusCodes.Status500InternalServerError };
                                     }
 
@@ -226,7 +233,7 @@ namespace SyncingTenantUsers.Services
                                         List<UserLicensesModel> userLicenses = new List<UserLicensesModel>();
 
                                         // Send the GET request to get the subscribed SKUsFor that Tenant,userLicenses
-                                        string apiUrlUser_Licenses = $"https://graph.microsoft.com/v1.0/users?$filter=mail ne null&$top=999&$count=true&&$select=id,username,userPrincipalName,givenName,surname,displayName,mail,assignedLicenses,assignedPlans";
+                                        string apiUrlUser_Licenses = $"https://graph.microsoft.com/v1.0/users?$filter=mail ne null and assignedLicenses/$count ne 0&$top=999&$count=true&&$select=id,username,userPrincipalName,givenName,surname,displayName,mail,assignedLicenses,assignedPlans";
                                         HttpClient httpClientUserLicenses = new HttpClient();
                                         httpClientUserLicenses.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", LoginAccessToken);
                                         httpClientUserLicenses.DefaultRequestHeaders.Add("ConsistencyLevel", "eventual");
@@ -250,11 +257,11 @@ namespace SyncingTenantUsers.Services
                                                     continue;
                                                 }
                                                 // Check if assignedLicenses is not null and contains any elements
-                                                if (user_License["assignedLicenses"] == null || user_License["assignedLicenses"].Count == 0)
-                                                {
-                                                    // Skip processing users with no assigned licenses
-                                                    continue;
-                                                }
+                                                //if (user_License["assignedLicenses"] == null || user_License["assignedLicenses"].Count == 0)
+                                                //{
+                                                //    // Skip processing users with no assigned licenses
+                                                //    continue;
+                                                //}
                                                 string displayName = user_License["displayName"];
                                                 string[] nameParts = displayName.Split(' ');
 
@@ -564,7 +571,9 @@ namespace SyncingTenantUsers.Services
                                 return new ObjectResult("Failed to acquire access token for the tenant") { StatusCode = StatusCodes.Status500InternalServerError };
                             }
 
+                            httpClient.Dispose();
                         }
+                        
 
 
                     }
@@ -587,7 +596,7 @@ namespace SyncingTenantUsers.Services
                 return new ObjectResult($"An error occurred: {ex.Message}") { StatusCode = StatusCodes.Status500InternalServerError };
             }
         }
-        public async Task<string> AcquireAccessToken(string clientId, string clientSecret, string tokenEndpointUrl)
+        public async Task<string> AcquireAccessToken(string clientId, string clientSecret, string tokenEndpointUrl,Microsoft.Azure.WebJobs.ExecutionContext context)
         {
             try
             {
