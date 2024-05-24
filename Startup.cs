@@ -1,6 +1,7 @@
 ﻿using SyncingTenantUsers.Services;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
+
 using System.Threading;
 
 [assembly: FunctionsStartup(typeof(SyncingTenantUsers.Startup))]
@@ -21,6 +22,14 @@ namespace SyncingTenantUsers
 
             // Add ExecutionContext
             services.AddSingleton<ExecutionContext>();
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowSpecificOrigin",
+                    builder => builder.WithOrigins("https://www.activ365.cloud")
+                                      .AllowAnyHeader()
+                                      .AllowAnyMethod());
+            });
+
 
         }
     }
