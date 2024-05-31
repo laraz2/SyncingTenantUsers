@@ -2,8 +2,16 @@
 {
     public class AppExceptionErrorModel
     {
-        public string Error { get; set; } = "";
-        public string ErrorCode { get; set; } = "";
-        public string ErrorVariable { get; set; }= "";
+
+        public string message { get; set; }
+
+        public ErrorObject error { get; set; }
+
+    }
+
+    public class ErrorObject
+    {
+        public string error { get; set; }
+        public string errorCode { get; set; }
     }
 }

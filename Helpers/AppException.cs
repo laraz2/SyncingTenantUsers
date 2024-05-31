@@ -1,78 +1,90 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using SyncingTenantUsers.Models.ErrorModels;
+using Microsoft.Extensions.Configuration;
 using System;
-using SyncingTenantUsers.Models.ErrorModels;
-
+using System.Net;
 
 namespace SyncingTenantUsers.Helpers
 {
-
-
     public class AppException : Exception
     {
-        private readonly IConfiguration _configuration;
-
-        public AppExceptionErrorModel ErrorObject { get; set; }
-        public AppException(IConfiguration configuration)
+        public AppExceptionErrorModel AppExceptionErrorModel { get; set; }
+        public ErrorObject ErrorObject { get; set; }
+        public int StatusCode { get; set; }
+        public AppException(AppExceptionErrorModel AppExceptionErrorModel, ErrorObject errorObject, int statusCode)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        }
-        public AppException(AppExceptionErrorModel errorObject, IConfiguration configuration)
-        {
-            ErrorObject = errorObject;
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            this.ErrorObject = errorObject;
+            this.AppExceptionErrorModel = AppExceptionErrorModel;
+            this.StatusCode =   statusCode;
         }
 
-        public AppException(string message, IConfiguration configuration)
-            : base(configuration.GetSection("BackendErrors")[message] ?? message)
+
+        public AppException(string message, HttpStatusCode statusCode) 
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            ErrorObject = new AppExceptionErrorModel
+            AppExceptionErrorModel = new AppExceptionErrorModel
             {
-                Error = configuration.GetSection("BackendErrors")[message] ?? message,
-                ErrorCode = message,
+                message =  message,
+                error = new ErrorObject
+                {
+                    error = message,
+                    errorCode = message,
+
+                }
             };
+            StatusCode = (int)(statusCode);
         }
 
-        public AppException(string message, string secondMessage, IConfiguration configuration)
-            : base(configuration.GetSection("BackendErrors")[message] ?? message)
+
+        public AppException(string message, string _secondMessage)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
-            if (!string.IsNullOrEmpty(secondMessage))
+            AppExceptionErrorModel = new AppExceptionErrorModel
             {
-                string errorToLog = $"Log Written Date: {DateTime.UtcNow.ToString()} | Error Message: {secondMessage}\n----------------------------------------------------------\n";
-               // LogErrorToAzure(errorToLog, _configuration);
-            }
+                message = _secondMessage,
+                error = new ErrorObject
+                {
+                    error = message,
+                    errorCode = message,
 
-            var errorMessage = _configuration.GetSection("BackendErrors")?[message];
-            ErrorObject = new AppExceptionErrorModel
-            {
-                Error = errorMessage ?? "",
-                ErrorCode = message,
+                }
             };
+
         }
 
-        // Other constructors follow the same pattern
+        public AppException(string message, string _secondMessage, string? functinoName, string? model)
+        {
 
-        //public void LogErrorToAzure(string errorMessage, IConfiguration _configuration)
-        //{
-        //    string azureStorageConnectionString = _configuration.GetSection("Azure-Storage")["ConnectionString"]!;
-        //    string containerName = _configuration.GetSection("Azure-Storage")["ContainerName"]!;
-        //    string blobName = _configuration.GetSection("Azure-Storage")["BlobName"]!;
+            AppExceptionErrorModel = new AppExceptionErrorModel
+            {
+                message = _secondMessage,
+                error = new ErrorObject
+                {
+                    error = message,
+                    errorCode = message,
 
-        //    BlobContainerClient containerClient = new BlobContainerClient(azureStorageConnectionString, containerName);
+                }
+            };
 
-        //    // Ensure container exists
-        //    containerClient.CreateIfNotExists();
+        }
 
-        //    // Get blob reference
-        //    BlobClient blobClient = containerClient.GetBlobClient(blobName);
+        public AppException(string message, string _secondMessage, HttpStatusCode statusCode)
+        {
 
-        //    // Create or append to blob
-        //    using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(errorMessage)))
-        //    {
-        //        blobClient.Upload(stream, true);
-        //    }
-        //}
+            AppExceptionErrorModel = new AppExceptionErrorModel
+            {
+                message = _secondMessage,
+                error = new ErrorObject
+                {
+                    error = message,
+                    errorCode = message,
+
+                }
+            };
+            StatusCode = (int)(statusCode);
+
+
+        }
+
+
+
     }
 }

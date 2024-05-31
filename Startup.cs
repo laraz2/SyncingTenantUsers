@@ -25,7 +25,7 @@ namespace SyncingTenantUsers
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowSpecificOrigin",
-                    builder => builder.WithOrigins("https://www.activ365.cloud")
+                    builder => builder.WithOrigins("https://entelligence365.crm4.dynamics.com/")
                                       .AllowAnyHeader()
                                       .AllowAnyMethod());
             });
