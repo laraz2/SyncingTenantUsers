@@ -24,8 +24,13 @@ public class SyncAzureAccount
     }
 
     [FunctionName("SyncAzureAccounts")]
+    //// public async Task<IActionResult> RunSyncAzureAccounts(
+    //[HttpTrigger(AuthorizationLevel.Function, "get", Route = "SyncAzureAccounts")] HttpRequest req, Microsoft.Azure.WebJobs.ExecutionContext context, // Change the ExecutionContext namespace
+    //ILogger log)
+
+    //{
     public async Task<IActionResult> RunSyncAzureAccounts(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "SyncAzureAccounts")] HttpRequest req, Microsoft.Azure.WebJobs.ExecutionContext context, // Change the ExecutionContext namespace
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "SyncAzureAccounts")] HttpRequest req, Microsoft.Azure.WebJobs.ExecutionContext context, // Change the ExecutionContext namespace
         ILogger log)
 
     {

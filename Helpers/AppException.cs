@@ -50,7 +50,7 @@ namespace SyncingTenantUsers.Helpers
 
         }
 
-        public AppException(string message, string _secondMessage, string? functinoName, string? model)
+        public AppException(string message, string _secondMessage, string functinoName, string model)
         {
 
             AppExceptionErrorModel = new AppExceptionErrorModel

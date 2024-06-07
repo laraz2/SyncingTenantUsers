@@ -40,7 +40,7 @@ namespace SyncingTenantUsers.Services
         {
             try
             {
-              
+
 
                 string clientId = config["Authentication:ClientId"]!;
                 string clientSecret = config["Authentication:ClientSecret"]!;
@@ -130,7 +130,7 @@ namespace SyncingTenantUsers.Services
                             continue;
                         }
 
-                        // Deserialize the response JSON
+                        // Deserialize the accountLicenses response JSON
                         dynamic accountLicensesJsonObject = JsonConvert.DeserializeObject(await accountLicenseResponse.Content.ReadAsStringAsync());
                         // Extract the list of account licenses from dataverse and put it in account licenses list
                         List<AccountLicensesOutputModel> accountLicenses = accountLicensesJsonObject.GetValue("value").ToObject<List<AccountLicensesOutputModel>>();
@@ -339,8 +339,8 @@ namespace SyncingTenantUsers.Services
                                 contactId = outputContactModel.contactid;
                                 foreach (var license in user_License.assignedLicenses)
                                 {
-                                    var nbr = user_License.assignedLicenses.Count;
-                                    Console.WriteLine($"Number of assigned licenses for {user.adx_identity_username} is {nbr}");
+                                    //var nbr = user_License.assignedLicenses.Count;
+                                    //Console.WriteLine($"Number of assigned licenses for {user.adx_identity_username} is {nbr}");
                                     var m365product = m365ProductList.FirstOrDefault(u => u.psa_guid?.ToString() == license.skuId?.ToString());
 
                                     if (m365product == null)
@@ -577,7 +577,7 @@ namespace SyncingTenantUsers.Services
                 return new OkObjectResult("Accounts Processed Successfully!");
             }
 
-            catch (AppException ex)
+            catch (AppException)
             {
                 throw;
             }
@@ -1120,7 +1120,7 @@ namespace SyncingTenantUsers.Services
             }
 
 
-            catch (AppException ex)
+            catch (AppException )
             {
                 throw;
             }
@@ -1163,7 +1163,7 @@ namespace SyncingTenantUsers.Services
                     // Log or handle token acquisition failure
                 }
             }
-            catch (AppException ex)
+            catch (AppException)
             {
                 throw;
             }
